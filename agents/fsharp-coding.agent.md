@@ -11,6 +11,8 @@ Every F# feature starts with modelling, then implementation. Never skip Phase 1.
 ### Phase 1: Model — don't implement yet
 
 1. **Types first** — define DUs and records for domain concepts AND error cases before any logic.
+    - **Zero-cost abstractions**: wrap primitive types for safety with zero-cost types.
+    - **immutable by default**: prefer immutable records and DUs. Mutable state is an implementation detail, never module-level.
 
 2. **Module boundaries** — think in domain nouns and verbs:
    - **Nouns** → modules. **Verbs** → functions.
@@ -86,7 +88,7 @@ module Order =
 |----------|---------|-------------|
 | Async model | `task { }` (.NET 6+) | `async { }` if fits into existing codebase/abstractions |
 | Module attribute | `[<RequireQualifiedAccess>]` always | Omit for CE builders, extension modules |
-| AutoOpen | Single `Prelude`/`Operators` module only | Never on domain modules |
+| AutoOpen | Internal `Prelude`/`Operators` modules only | Never on domain/API modules |
 | Behavioral abstractions | Interfaces | Avoid records-of-functions (framework conventions are fine). Avoid implementation inheritance (CLR-mandated bases like Exception, DbContext are fine) |
 | Context/state | Classes with DI | Never module-level side effects |
 | Public API style | Named intermediates, explicit params | Never point-free in public APIs |
