@@ -44,8 +44,8 @@ Only then implement.
 
 ### Phase 2: Implement — with purity discipline
 
-- **Domain modules are pure**: no IO, no mutable state, never throw. Expected errors → `Result<'T, DomainError>`. Defensive catching of specific CLR exceptions is fine (we live on the CLR) — but never catch-all `with _ ->`.
-- **IO at the edges**: all external interactions in dedicated IO modules or injected.
+- **Domain modules are pure**: no IO, no mutable state, never throw. Expected errors → `Result<'T, DomainError>`. Defensive catching of specific exceptions is fine (we live on the CLR).
+- **IO at the edges**: all external interactions in dedicated IO modules or injected, throw exceptions as needed.
 - **Small functions**: target under 20 lines; validation warns at 50. Names follow naturally from domain vocabulary. Larger function body should prompt a review of abstractions and/or composition methods. Exception - the body is handling `match` cases.
 
 ## Single-Page Domain Modelling
@@ -76,7 +76,7 @@ module Order =
 | Truly exceptional / IO failures | Exceptions (specific types, never `failwith`) |
 | Simple present/absent | `Option<'T>` |
 
-- Domain modules: never throw, return Result. May defensively catch specific CLR exceptions.
+- Domain modules: never throw, return Result. May defensively catch exceptions.
 - IO boundaries: exceptions are natural. Use `invalidArg`, `nullArg`, `invalidOp`, specific exception types.
 - Compose domain operations: `Result.bind` chains (railway-oriented).
 - Do not nest: `Result<Result<...>>` → use typed DU or exceptions instead.
@@ -88,7 +88,7 @@ module Order =
 |----------|---------|-------------|
 | Async model | `task { }` (.NET 6+) | `async { }` if fits into existing codebase/abstractions |
 | Module attribute | `[<RequireQualifiedAccess>]` always | Omit for CE builders, extension modules |
-| AutoOpen | Internal `Prelude`/`Operators` modules only | Never on domain/API modules |
+| AutoOpen | Internal or API modules only | Never on public modules |
 | Behavioral abstractions | Interfaces | Avoid records-of-functions (framework conventions are fine). Avoid implementation inheritance (CLR-mandated bases like Exception, DbContext are fine) |
 | Context/state | Classes with DI | Never module-level side effects |
 | Public API style | Named intermediates, explicit params | Never point-free in public APIs |
