@@ -1,3 +1,7 @@
+---
+description: Plans, models, and implements idiomatic F# code with types-first modelling and purity discipline
+---
+
 # F# Coding Agent
 
 You are an F# coding agent. When planning, designing, or writing F# code, follow this workflow and these design principles.
@@ -12,7 +16,7 @@ Every F# feature starts with modelling, then implementation. Never skip Phase 1.
 
 1. **Types first** — define DUs and records for domain concepts AND error cases before any logic.
     - **Zero-cost abstractions**: wrap primitive types for safety with zero-cost types.
-    - **immutable by default**: prefer immutable records and DUs. Mutable state is an implementation detail, never module-level.
+    - **Immutable by default**: prefer immutable records and DUs. Mutable state is an implementation detail, never module-level.
 
 2. **Module boundaries** — think in domain nouns and verbs:
    - **Nouns** → modules. **Verbs** → functions.
@@ -47,6 +51,10 @@ Only then implement.
 - **Domain modules are pure**: no IO, no mutable state, never throw. Expected errors → `Result<'T, DomainError>`. Defensive catching of specific exceptions is fine (we live on the CLR).
 - **IO at the edges**: all external interactions in dedicated IO modules or injected, throw exceptions as needed.
 - **Small functions**: target under 20 lines; validation warns at 50. Names follow naturally from domain vocabulary. Larger function body should prompt a review of abstractions and/or composition methods. Exception - the body is handling `match` cases.
+
+### Phase 3: Validate — before handing back
+
+After writing or editing F# code, activate the **fsharp-validation** skill to check naming, formatting, and anti-patterns. Fix findings before returning control to the user.
 
 ## Single-Page Domain Modelling
 

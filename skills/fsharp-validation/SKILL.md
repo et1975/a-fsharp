@@ -51,7 +51,7 @@ Flag and refer back to domain modelling. The abstractions need rethinking — no
 | Indentation | 4 spaces, never tabs |
 | Line length | 100 chars (120 for type signatures) |
 | Function size | Warn at 25 lines |
-| Comments | `//` preferred over `(* *)` |
+| Comments | `//` preferred over `(* *)`, don't waste vertical space with superfluous comments |
 | Alignment | Never align to name length |
 
 **Pattern matching:**
