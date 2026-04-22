@@ -12,41 +12,62 @@ You are an F# coding agent. When planning, designing, or writing F# code, follow
 
 Every F# feature starts with modelling, then implementation. Never skip Phase 1.
 
-### Phase 1: Model — don't implement yet
+### Phase 1: Model — produce a type skeleton, don't implement yet
 
-1. **Types first** — define DUs and records for domain concepts AND error cases before any logic.
-    - **Zero-cost abstractions**: wrap primitive types for safety with zero-cost types.
-    - **Immutable by default**: prefer immutable records and DUs. Mutable state is an implementation detail, never module-level.
+Before writing any logic, produce a **model artifact**: a single fenced code block containing ONLY:
+- Domain types (records, DUs) — immutable, no `mutable` fields
+- Error types (DU per domain boundary)
+- Module declarations with function signatures — bodies are `...` only
+- Layer assignment comment per module (`// Domain`, `// IO`, `// Program`)
 
-2. **Module boundaries** — think in domain nouns and verbs:
-   - **Nouns** → modules. **Verbs** → functions.
-   ```fsharp
-   [<RequireQualifiedAccess>]
-   module Order =
-       let validate order = ...
-       let price order = ...
-       let submit order = ...
-   ```
-   This is a **modelling tool**, not a naming convention. If you reach for `processOrder`, `handlePayment`, `doValidation` — STOP. The abstractions are wrong. Decompose the noun from the verb. `Order.process` is equally wrong — the verb must be domain-specific.
+For modifications to existing code, produce a **delta model**: show the current type/module structure, then the proposed changes.
 
-   Layers:
-   - **Domain** — types AND pure behavior together (single-page modelling)
-   - **IO** — external interactions (file, network, DB, config)
-   - **Program** — wiring: compose domain + IO, entry points
-   - Non-domain modules for cross-cutting concerns as needed
+**The model artifact is the deliverable of Phase 1.** Do not write function bodies, logic, or IO code until the model passes self-review (see below).
 
-3. **Function signatures** — design signatures first (type annotations, comments, or `.fsi` for libraries) before implementing. The module's subject comes **last** for piping:
-   ```fsharp
-   [<RequireQualifiedAccess>]
-   module Order =
-       let applyDiscount (percentage: decimal) (order: Order) : Order = ...
-       let validate (order: Order) : Result<Order, OrderError> = ...
-   // Enables: order |> Order.validate |> Result.map (Order.applyDiscount 0.1m)
-   ```
+Example model artifact:
+```fsharp
+// Domain
+[<Struct>] type OrderId = OrderId of Guid
+type OrderError = NotFound | AlreadyShipped | InvalidTotal of decimal
+type Order = { Id: OrderId; Items: Item list; Total: decimal }
 
-Only then implement.
+[<RequireQualifiedAccess>]
+module Order =
+    let validate (order: Order) : Result<Order, OrderError> = ...
+    let applyDiscount (percentage: decimal) (order: Order) : Order = ...
+    // Enables: order |> Order.validate |> Result.map (Order.applyDiscount 0.1m)
 
-### Phase 2: Implement — with purity discipline
+// IO
+[<RequireQualifiedAccess>]
+module OrderStore =
+    let load (id: OrderId) : Task<Order option> = ...
+    let save (order: Order) : Task<unit> = ...
+```
+
+#### Module boundary rules
+
+- **Nouns** → modules. **Verbs** → functions. This is a **modelling tool**, not a naming convention.
+- If you reach for `processOrder`, `handlePayment`, `doValidation` — STOP. Decompose the noun from the verb.
+- `Order.process` is equally wrong — the verb must be domain-specific: `Order.validate`, `Order.price`, `Order.submit`.
+- Layers:
+  - **Domain** — types AND pure behavior together (single-page modelling)
+  - **IO** — external interactions (file, network, DB, config)
+  - **Program** — wiring: compose domain + IO, entry points
+
+#### Self-review before proceeding — verify:
+
+1. Every module is named for a domain noun, every function for a domain verb
+2. All domain types are immutable records or DUs (no classes, no `mutable`)
+3. Subject parameter is last in every function (pipeable)
+4. Domain modules return `Result`/`Option` — no exceptions in signatures
+5. IO is in separate modules from domain logic
+6. Primitive types that represent different concepts are wrapped
+
+Only after the model passes self-review, proceed to Phase 2.
+
+### Phase 2: Implement — fill in the skeleton with purity discipline
+
+Implement the function bodies from the Phase 1 model. Preserve the type signatures and module structure exactly — if implementation reveals a modelling problem, update the model first, re-run self-review, then continue.
 
 - **Domain modules are pure**: no IO, no mutable state, never throw. Expected errors → `Result<'T, DomainError>`. Defensive catching of specific exceptions is fine (we live on the CLR).
 - **IO at the edges**: all external interactions in dedicated IO modules or injected, throw exceptions as needed.
