@@ -142,7 +142,7 @@ module Order =
 
 | Decision | Default | Alternative |
 |----------|---------|-------------|
-| Async model | `task { }` (.NET 6+) | `async { }` if fits into existing codebase/abstractions |
+| Async model | `backgroundTask {}` or `task { }` (.NET 6+) | `async { }` if fits into existing codebase/abstractions |
 | Module attribute | `[<RequireQualifiedAccess>]` always | Omit for CE builders, extension modules |
 | AutoOpen | Internal or API modules only | Never on public modules |
 | Behavioral abstractions | Interfaces | Avoid records-of-functions (framework conventions are fine). Avoid implementation inheritance (CLR-mandated bases like Exception, DbContext are fine) |
