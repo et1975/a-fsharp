@@ -72,6 +72,37 @@ Flag and refer back to domain modelling. The abstractions need rethinking — no
 - Long mutation RHS: new line
 - Single-clause `with`: no `|`
 
+## `open` Statement Ordering
+
+Sort from fundamental to most specific.
+
+| Order | Layer | Examples |
+|-------|-------|----------|
+| 1 | System / BCL | `System`, `System.Collections.Generic`, `System.Threading.Tasks` |
+| 2 | FSharp.Core / FSharp libraries | `FSharp.Control`, `FSharp.Collections` |
+| 3 | Third-party / Framework | `Newtonsoft.Json`, `Serilog`, `FsToolkit.ErrorHandling` |
+| 4 | Application | Project's own namespaces: `MyApp.Domain`, `MyApp.Infrastructure` |
+| 5 | Sibling / Internal | Modules within the same project or namespace layer |
+
+- Within a layer, order by dependency (topological), **not** alphabetically
+- Flag violations when opens are intermixed across layers
+
+```fsharp
+// ❌ Intermixed layers, no grouping
+open MyApp.Domain
+open System
+open FsToolkit.ErrorHandling
+open System.Collections.Generic
+open MyApp.Infrastructure
+
+// ✔️ Fundamental → most specific
+open System
+open System.Collections.Generic
+open FsToolkit.ErrorHandling
+open MyApp.Domain
+open MyApp.Infrastructure
+```
+
 ## Bad Patterns
 
 | Pattern | Alternative |
