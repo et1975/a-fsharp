@@ -142,7 +142,7 @@ module Order =
 
 | Decision | Default | Alternative |
 |----------|---------|-------------|
-| Async model | `backgroundTask {}` or `task { }` (.NET 6+) | `async { }` if fits into existing codebase/abstractions |
+| Async model | `backgroundTask {}` or `task { }` | `async { }` if fits into existing codebase/abstractions |
 | Module attribute | `[<RequireQualifiedAccess>]` always | Omit for CE builders, extension modules |
 | AutoOpen | Internal or API modules only | Never on public modules |
 | Behavioral abstractions | Interfaces | Avoid records-of-functions (framework conventions are fine). Avoid implementation inheritance (CLR-mandated bases like Exception, DbContext are fine) |
@@ -157,6 +157,7 @@ When wrapping primitives for type safety, unless there's existing pattern, prefe
 1. **UMX Measure Types** (requires `FSharp.UMX` NuGet) — zero allocation: `[<Measure>] type orderId; type OrderId = string<orderId>`
 2. **`[<Struct>]` Single-Case DUs** — zero allocation, pattern matching: `[<Struct>] type ClientId = ClientId of Guid`
 3. **Type Aliases** — documentation only, no safety: `type Dispatch<'msg> = 'msg -> unit`
+Complement the types with supporting modules that provide `create`/`ofString`/`toString` etc. functions for construction and access, so that the type invariants are enforced and the underlying primitive is not exposed directly.
 
 ## Module Organisation
 - **Multiple-modules-per-file** is natural in F# as long as they belong to the same conceptual layer/partition.
