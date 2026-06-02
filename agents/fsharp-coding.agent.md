@@ -58,7 +58,7 @@ type Order = { Id: OrderId; Items: Item list; Total: decimal }
 
 [<RequireQualifiedAccess>]
 module Order =
-    val validate      : order:Order -> Result<Order, OrderError>
+    val validate : order:Order -> Result<Order, OrderError>
     val applyDiscount : percentage:decimal -> order:Order -> Order
     // Enables: order |> Order.validate |> Result.map (Order.applyDiscount 0.1m)
 ```
