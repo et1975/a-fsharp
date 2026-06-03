@@ -134,6 +134,29 @@ open MyApp.Infrastructure
 | `Task` piped into `ignore` | Unawaited hot task disrupts the .NET task scheduler — always await or return it |
 | `Async` piped into `ignore` | No-op — cold async never executes. Start it (`Async.Start`) or await it |
 
+## Opaque Type Discipline
+
+Wrapped primitives (UMX measure types, single-case DUs) are only *opaque* when paired with a `[<RequireQualifiedAccess>]` companion module that owns construction and read-out. Without it, the wrapper is a leaky alias. Flag:
+
+| Pattern | Issue | Fix |
+|---------|-------|-----|
+| `[<Measure>] type x` + `type X = string<x>` without a `module X` exposing `create`/`value` (or `ofX`/`toX`) | Wrapper exists but callers must reach for `UMX.tag`/`UMX.untag` — type is not opaque | Add `[<RequireQualifiedAccess>] module X` with construction + read-out |
+| `UMX.tag<...>`, `UMX.untag`, or the `%foo` shorthand used **outside** the wrapper type's home module | Bypasses validation and leaks the underlying primitive into call sites | Route through `X.create` / `X.value` |
+| Single-case DU wrapping a domain primitive with a **public** case constructor | Anyone can fabricate values — invariants unenforceable | Mark the case `private`, expose `create`/`value` from the companion module |
+| Direct pattern-match on a single-case DU (`let (ClientId g) = ...`) outside its home module | Same opacity break — the case is in the public surface | Use `ClientId.value` |
+| Function parameter typed as the underlying primitive (`string`, `Guid`, `int`) where a domain opaque type exists for that concept | Loses the type safety the wrapper exists to provide | Take the opaque type at the parameter |
+| Plain alias (`type CustomerId = string`) used as if it were a domain type | Aliases give zero safety — fully transparent to the compiler | Promote to UMX measure or struct DU with companion module |
+| UMX measure tag named `PascalCase` | Convention is lowercase for the phantom tag, PascalCase for the user-facing alias | Rename measure to `lowerCase`, keep alias `PascalCase` |
+
+The canonical leak signal: `UMX.tag` / `UMX.untag` / `%foo` or a raw single-case DU constructor appearing anywhere other than the type's home module.
+
+```fsharp
+// ❌ Measure tag PascalCase, no companion module — callers reach for UMX directly
+[<Measure>] type OrderId
+type OrderId' = string<OrderId>
+let publish (raw: string) = sendOrder (UMX.tag<OrderId> raw)   // leaks raw + tag at the call site
+```
+
 ## Domain Purity Violations
 
 Domain modules must be free of IO, mutable state, and **throwing**. Defensive catching of specific CLR exceptions is OK — never catch-all.

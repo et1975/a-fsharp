@@ -150,14 +150,39 @@ module Order =
 | Async coordination | `MailboxProcessor` | Avoid locks, mutexes, shared mutable state for async state machines |
 | Public API style | Named intermediates, explicit params | Never point-free in public APIs |
 
-## Zero-Cost Abstraction Hierarchy
+## Zero-Cost Abstraction Hierarchy — Opaque Types
 
-When wrapping primitives for type safety, unless there's existing pattern, prefer in order:
+When wrapping primitives for type safety, the goal is an **opaque type**: callers see a distinct domain type, never the underlying representation, and cannot construct or destructure values without going through a controlled API. A wrapper without a `[<RequireQualifiedAccess>]` companion module hiding construction and read-out is not opaque — it's a leaky alias. Unless an existing pattern dictates otherwise, prefer in order:
 
-1. **UMX Measure Types** (requires `FSharp.UMX` NuGet) — zero allocation: `[<Measure>] type orderId; type OrderId = string<orderId>`
-2. **`[<Struct>]` Single-Case DUs** — zero allocation, pattern matching: `[<Struct>] type ClientId = ClientId of Guid`
-3. **Type Aliases** — documentation only, no safety: `type Dispatch<'msg> = 'msg -> unit`
-Complement the types with supporting modules that provide `create`/`ofString`/`toString` etc. functions for construction and access, so that the type invariants are enforced and the underlying primitive is not exposed directly.
+1. **UMX measure types** (requires `FSharp.UMX` NuGet) — zero allocation; the measure tag is a phantom marker erased at runtime.
+
+   ```fsharp
+   open FSharp.UMX
+
+   [<Measure>] type orderId          // lowercase — it's a phantom tag, not a domain type
+   type OrderId = string<orderId>    // PascalCase alias is what callers see and pass around
+
+   [<RequireQualifiedAccess>]
+   module OrderId =
+       let create (raw: string) : Result<OrderId, string> =
+           if String.IsNullOrWhiteSpace raw then Error "empty order id"
+           else Ok (UMX.tag<orderId> raw)
+       let value (id: OrderId) : string = UMX.untag id
+   ```
+
+   Inside the module, `UMX.tag<orderId> s` constructs and `UMX.untag id` (or its shorthand `%id`) destructures. **Outside the module, callers must go through `OrderId.create` / `OrderId.value` — never `UMX.tag` / `UMX.untag` / `%` directly.** That discipline is what makes the type opaque; without it, UMX is just sugar.
+
+2. **`[<Struct>]` single-case DUs** — zero allocation, supports pattern matching. Declare the case `private` so it cannot be constructed or destructured outside the home module, then follow the same companion-module shape as the `Email` example under *Module Organisation*:
+
+   ```fsharp
+   [<Struct>] type ClientId = private ClientId of Guid
+   ```
+
+3. **Type aliases** — documentation only, no type safety, **never opaque**: `type Dispatch<'msg> = 'msg -> unit`. Use only for readability of structural types; never for domain primitives.
+
+**UMX vs struct DU**: prefer UMX when the underlying type is a `string`/`Guid`/numeric primitive and you want maximal interop with libraries that consume the raw type (serialization, DB drivers) — the runtime representation IS the primitive. Prefer struct DU when you want pattern matching to be the natural read-out, or when the wrapped type isn't a UMX-supported primitive.
+
+The companion module shape — `create` returning `Result` when validation can fail (total `create` otherwise), `value` for read-out, `ofX`/`toX` for known conversions — applies to both.
 
 ## Module Organisation
 - **Multiple-modules-per-file** is natural in F# as long as they belong to the same conceptual layer/partition.
