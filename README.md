@@ -9,6 +9,7 @@ Distilled from official F# guidelines, customized with my personal preferences.
 - **[agents/fsharp-coding.agent.md](agents/fsharp-coding.agent.md)** — A coding agent with an opinionated F# workflow: types-first domain modelling, purity discipline, single-page domain modelling, railway-oriented error handling, and module organisation conventions.
 - **[skills/fsharp-validation/](skills/fsharp-validation/)** — Validation skill for reviewing F# code against naming, formatting, and anti-pattern rules.
 - **[skills/fsharp-interop/](skills/fsharp-interop/)** — Opt-in skill for designing .NET-consumer-friendly API façades on top of idiomatic F# internals.
+- **[hooks/fsharp-reflex.{json,py}](hooks/)** — `PreToolUse` audit hook that nags when F# files are edited directly (without delegating to `fsharp-coding`) or when an F# edit isn't followed by `fsharp-validation`. Never blocks; advisory only. Modelled on `palace-reflex` / `fsx-reflex` — wire it up alongside those in `~/.copilot/hooks/`.
 
 ## Usage
 

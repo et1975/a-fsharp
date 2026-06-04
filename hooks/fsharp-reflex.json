@@ -1,0 +1,11 @@
+{
+  "$schema": "https://copilot.github.com/schemas/hook.json",
+  "name": "fsharp-reflex",
+  "event": "PreToolUse",
+  "description": "Audit hook: nag when F# files are edited directly without delegating to the fsharp-coding agent, or when an F# edit is not followed by fsharp-validation.",
+  "command": ["python3", "${HOOK_DIR}/fsharp-reflex.py"],
+  "blocking": false,
+  "matchers": {
+    "tool_name": ["edit", "create", "task", "skill"]
+  }
+}

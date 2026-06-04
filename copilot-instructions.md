@@ -1,9 +1,9 @@
-# F# Repository Instructions
+# F# Instructions
 
-If this is an F# codebase then for work on F# files (`.fs`, `.fsi`, `.fsx`) and project files (`.fsproj`):
+When **writing or modifying** F# source (`.fs`, `.fsi`, `.fsx`) or project files (`.fsproj`):
 
-- Use the **fsharp-coding** agent for planning and architecture decisions.
-- Use the **/fsharp-validation** skill to validate F# code changes.
-- Use the **/fsharp-interop** skill only when the user explicitly targets C# consumers.
+- **Delegate the edit to the `fsharp-coding` agent.** Do not edit `.fs`/`.fsi`/`.fsx`/`.fsproj` files directly — dispatch the work via the `task` tool with `agent_type=fsharp-coding`. This applies to every F# edit, not just "architectural" ones. The agent owns the file once delegated. Size of the change is not a reason to skip delegation.
+- **After every F# edit** (yours or the agent's), invoke the `/fsharp-validation` skill before returning control to the user. Fix every finding it reports and re-run it until clean. Do not hand back with known violations.
+- Invoke the `/fsharp-interop` skill **only** when the user explicitly says the surface targets C#/.NET consumers (`"targets C# consumers"`, `"non-F# .NET consumers"`, `"enable interop checks"`).
 
-Non-F# files in the repo (`.ps1`, `.yml`, `.json`, `.md`, etc.) do not require F# skills.
+Non-F# files (`.ps1`, `.yml`, `.json`, `.md`, etc.) do not require these skills.

@@ -1,9 +1,10 @@
 ---
 name: fsharp-validation
 description: >-
-  Use when reviewing, validating, or checking F# code after generation or
-  editing — for code review, PR validation, post-edit verification, or when
-  the user says 'check', 'lint', 'validate', or 'review'.
+  Use immediately after any tool that edits or creates `.fs`, `.fsi`, `.fsx`,
+  or `.fsproj` files — and any time the user says 'check', 'lint',
+  'validate', or 'review' on F# code, or for PR / code review of F#. Run
+  until it reports no findings before handing control back.
 ---
 
 # F# Validation Skill

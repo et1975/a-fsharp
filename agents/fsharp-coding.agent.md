@@ -1,6 +1,10 @@
 ---
 name: fsharp-coding
-description: "Plans, models, and implements idiomatic F# code with types-first modelling and purity discipline"
+description: >-
+  Use for any edit to `.fs`, `.fsi`, `.fsx`, or `.fsproj` files, including
+  small or one-line changes. Plans, models, and implements idiomatic F# code
+  with types-first modelling and purity discipline. Size of the change is
+  not a reason to skip delegation.
 tools:
   - execute
   - edit
