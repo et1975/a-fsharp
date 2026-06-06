@@ -1,40 +1,10 @@
 #!/usr/bin/env python3
-"""
-fsharp-reflex — PreToolUse audit hook.
+"""PreToolUse audit hook: nag when F# edits skip `fsharp-coding` delegation or `fsharp-validation`.
 
-Mirrors the spirit of palace-reflex and fsx-reflex: never blocks, only injects
-an `additionalContext` reminder when the default agent is about to edit F#
-files without having delegated to the `fsharp-coding` agent, or without having
-invoked `fsharp-validation` after a prior F# edit.
+Reads Copilot's hook JSON from stdin. Per-session state under
+~/.copilot/state/fsharp-reflex/<session>.json keeps reminders to once per phase.
 
-Contract assumptions (adjust to match the local palace-reflex/fsx-reflex
-plumbing if they differ):
-
-  - Hook receives JSON on stdin describing the pending tool call. Expected
-    shape (best-effort — falls back to env vars where present):
-
-      {
-        "session_id":   "<uuid>",
-        "agent_name":   "Copilot CLI" | "fsharp-coding" | ...,
-        "tool_name":    "edit" | "create" | "task" | "skill" | ...,
-        "tool_input":   { ...arguments... }
-      }
-
-  - Hook writes JSON on stdout with optional `additionalContext`:
-
-      {
-        "hookSpecificOutput": {
-          "hookEventName":     "PreToolUse",
-          "additionalContext": "<reminder line>"
-        }
-      }
-
-    Empty output (or no `additionalContext`) means "say nothing".
-
-  - Exit code is always 0 — this hook is advisory, not gating.
-
-State is kept per-session under ~/.copilot/state/fsharp-reflex/<session>.json
-so reminders fire at most once per phase rather than on every tool call.
+Failure mode: any error -> exit 0 silently. Audit, not a gate.
 """
 
 from __future__ import annotations
