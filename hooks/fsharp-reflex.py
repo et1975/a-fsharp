@@ -21,6 +21,19 @@ AGENT_NAME = "fsharp-coding"
 SKILL_NAME = "fsharp-validation"
 
 STATE_DIR = Path.home() / ".copilot" / "state" / "fsharp-reflex"
+SAFE_SESSION = re.compile(r"[^A-Za-z0-9_.-]")
+
+TOOL_NAME_ALIASES = {
+    "Edit": "edit",
+    "Write": "create",
+    "Create": "create",
+    "ApplyPatch": "apply_patch",
+    "Bash": "bash",
+    "powershell": "bash",
+    "shell": "bash",
+    "Task": "task",
+    "Skill": "skill",
+}
 
 
 def read_event() -> dict[str, Any]:
@@ -33,10 +46,31 @@ def read_event() -> dict[str, Any]:
         return {}
 
 
+def read_tool_input(event: dict[str, Any]) -> Any:
+    value = next(
+        (
+            event.get(key)
+            for key in ("tool_input", "toolInput", "tool_args", "toolArgs")
+            if event.get(key) is not None
+        ),
+        {},
+    )
+    if isinstance(value, dict):
+        return value
+    if isinstance(value, str):
+        try:
+            parsed = json.loads(value)
+            return parsed if isinstance(parsed, dict) else value
+        except json.JSONDecodeError:
+            return value
+    return {}
+
+
 def emit(message: str | None) -> None:
     if not message:
         sys.exit(0)
     payload = {
+        "additionalContext": message,
         "hookSpecificOutput": {
             "hookEventName": "PreToolUse",
             "additionalContext": message,
@@ -46,10 +80,15 @@ def emit(message: str | None) -> None:
     sys.exit(0)
 
 
+def state_path(session_id: str) -> Path:
+    safe_id = SAFE_SESSION.sub("_", session_id or "default")[:64]
+    return STATE_DIR / f"{safe_id}.json"
+
+
 def load_state(session_id: str) -> dict[str, Any]:
     if not session_id:
         return {}
-    path = STATE_DIR / f"{session_id}.json"
+    path = state_path(session_id)
     if not path.exists():
         return {}
     try:
@@ -62,7 +101,7 @@ def save_state(session_id: str, state: dict[str, Any]) -> None:
     if not session_id:
         return
     STATE_DIR.mkdir(parents=True, exist_ok=True)
-    path = STATE_DIR / f"{session_id}.json"
+    path = state_path(session_id)
     try:
         path.write_text(json.dumps(state))
     except OSError:
@@ -86,9 +125,44 @@ def fsharp_path_in_bash(command: str | None) -> bool:
     return bool(pat.search(command))
 
 
-def target_is_fsharp(tool_name: str, tool_input: dict[str, Any]) -> bool:
+def fsharp_path_in_patch(tool_input: Any) -> bool:
+    if isinstance(tool_input, str):
+        patch = tool_input
+    elif isinstance(tool_input, dict):
+        patch = next(
+            (
+                value
+                for key in ("patch", "input", "arguments")
+                if isinstance((value := tool_input.get(key)), str)
+            ),
+            "",
+        )
+    else:
+        return False
+
+    header = re.compile(
+        r"^\*\*\* (?:Add|Update|Delete) File: .+\.(?:fs|fsi|fsx|fsproj)\s*$"
+        r"|^\*\*\* Move to: .+\.(?:fs|fsi|fsx|fsproj)\s*$",
+        re.IGNORECASE | re.MULTILINE,
+    )
+    return bool(header.search(patch))
+
+
+def target_is_fsharp(tool_name: str, tool_input: Any) -> bool:
+    if tool_name == "apply_patch":
+        return fsharp_path_in_patch(tool_input)
+    if not isinstance(tool_input, dict):
+        return False
     if tool_name in {"edit", "create"}:
-        return is_fsharp_path(tool_input.get("path"))
+        path = next(
+            (
+                tool_input.get(key)
+                for key in ("path", "file_path", "filePath")
+                if tool_input.get(key) is not None
+            ),
+            None,
+        )
+        return is_fsharp_path(path)
     if tool_name == "bash":
         return fsharp_path_in_bash(tool_input.get("command"))
     return False
@@ -97,10 +171,23 @@ def target_is_fsharp(tool_name: str, tool_input: dict[str, Any]) -> bool:
 def main() -> None:
     event = read_event()
 
-    tool_name = event.get("tool_name") or os.environ.get("COPILOT_TOOL_NAME", "")
-    tool_input = event.get("tool_input") or {}
-    session_id = event.get("session_id") or os.environ.get("COPILOT_SESSION_ID", "")
-    agent_name = event.get("agent_name") or os.environ.get("COPILOT_AGENT_NAME", "")
+    tool_name = (
+        event.get("tool_name")
+        or event.get("toolName")
+        or os.environ.get("COPILOT_TOOL_NAME", "")
+    )
+    tool_name = TOOL_NAME_ALIASES.get(tool_name, tool_name)
+    tool_input = read_tool_input(event)
+    session_id = (
+        event.get("session_id")
+        or event.get("sessionId")
+        or os.environ.get("COPILOT_SESSION_ID", "")
+    )
+    agent_name = (
+        event.get("agent_name")
+        or event.get("agentName")
+        or os.environ.get("COPILOT_AGENT_NAME", "")
+    )
 
     # Recursion guard: when fsharp-coding itself is editing F# files,
     # the agent IS the delegation target. Stay silent.
@@ -116,12 +203,12 @@ def main() -> None:
 
     # Track positive signals before evaluating edits, so a delegated/validated
     # call in the same turn isn't punished.
-    if tool_name == "task":
+    if tool_name == "task" and isinstance(tool_input, dict):
         agent_type = tool_input.get("agent_type") or tool_input.get("subagent_type")
         if agent_type == AGENT_NAME:
             state["agent_dispatched"] = True
 
-    elif tool_name == "skill":
+    elif tool_name == "skill" and isinstance(tool_input, dict):
         if tool_input.get("skill") == SKILL_NAME:
             state["validation_since_last_edit"] = True
             state["pending_edits"] = 0
