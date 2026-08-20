@@ -163,6 +163,70 @@ class AFSharpHookTests(unittest.TestCase):
                     )
                     self.assertIn("fsharp-reflex", output["additionalContext"])
 
+    def test_fsx_hook_handles_native_aliases_and_raw_patch_input(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            home = Path(directory)
+            repeated_read_session = self.session_id(home, "fsx-repeated-read")
+
+            repeated_read_output: dict[str, object] = {}
+            for _ in range(3):
+                repeated_read_output = self.run_hook(
+                    "fsx-reflex.py",
+                    {
+                        "sessionId": repeated_read_session,
+                        "toolName": "view",
+                        "toolInput": {"path": "src"},
+                    },
+                    home,
+                )
+
+            terminal_output = self.run_hook(
+                "fsx-reflex.py",
+                {
+                    "sessionId": self.session_id(home, "fsx-terminal"),
+                    "toolName": "bash",
+                    "toolInput": {"command": "python3 -c 'print(1)'"},
+                },
+                home,
+            )
+
+            patched_session = self.session_id(home, "fsx-patch")
+            patch_output = self.run_hook(
+                "fsx-reflex.py",
+                {
+                    "sessionId": patched_session,
+                    "toolName": "apply_patch",
+                    "toolInput": (
+                        "*** Begin Patch\n"
+                        "*** Add File: tool.fsx\n"
+                        "+#!/usr/bin/env -S dotnet fsi\n"
+                        "*** End Patch\n"
+                    ),
+                },
+                home,
+            )
+
+            post_patch_output: dict[str, object] = {}
+            for _ in range(3):
+                post_patch_output = self.run_hook(
+                    "fsx-reflex.py",
+                    {
+                        "sessionId": patched_session,
+                        "toolName": "view",
+                        "toolInput": {"path": "src"},
+                    },
+                    home,
+                )
+
+        self.assertIn("fsx-orchestration", repeated_read_output["additionalContext"])
+        self.assertEqual(
+            repeated_read_output["additionalContext"],
+            repeated_read_output["hookSpecificOutput"]["additionalContext"],
+        )
+        self.assertIn("fsx-orchestration", terminal_output["additionalContext"])
+        self.assertEqual(patch_output, {})
+        self.assertEqual(post_patch_output, {})
+
 
 if __name__ == "__main__":
     unittest.main()

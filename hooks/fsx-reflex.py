@@ -51,6 +51,24 @@ WINDOW = 6
 THRESHOLD = 3
 SAFE_SESSION = re.compile(r"[^A-Za-z0-9_.-]")
 
+TOOL_NAME_ALIASES = {
+    "Read": "read_file",
+    "view": "read_file",
+    "Grep": "grep_search",
+    "rg": "grep_search",
+    "Glob": "file_search",
+    "glob": "file_search",
+    "WebFetch": "fetch_webpage",
+    "Bash": "run_in_terminal",
+    "bash": "run_in_terminal",
+    "powershell": "run_in_terminal",
+    "shell": "run_in_terminal",
+    "Write": "create_file",
+    "Create": "create_file",
+    "create": "create_file",
+    "ApplyPatch": "apply_patch",
+}
+
 
 def buffer_path(session_id: str) -> Path:
     sid = SAFE_SESSION.sub("_", session_id or "default")[:64]
@@ -76,16 +94,67 @@ def append(path: Path, entry: str) -> None:
         pass
 
 
-def tool_signature(tool_name: str, tool_input: dict) -> str:
+def patch_input_text(tool_input: object) -> str:
+    if isinstance(tool_input, str):
+        return tool_input
+    if isinstance(tool_input, dict):
+        for key in ("patch", "input", "arguments"):
+            value = tool_input.get(key)
+            if isinstance(value, str):
+                return value
+    return ""
+
+
+def read_tool_input(payload: dict[str, object]) -> object:
+    value = next(
+        (
+            payload.get(key)
+            for key in ("tool_input", "toolInput", "tool_args", "toolArgs")
+            if payload.get(key) is not None
+        ),
+        {},
+    )
+    if isinstance(value, dict):
+        return value
+    if isinstance(value, str):
+        try:
+            parsed = json.loads(value)
+            return parsed if isinstance(parsed, dict) else value
+        except json.JSONDecodeError:
+            return value
+    return {}
+
+
+def tool_signature(tool_name: str, tool_input: object) -> str:
     """Encode tool call into a short line. Mark fsx-satisfying calls with !fsx."""
     sig = tool_name
     if tool_name == TERMINAL_TOOL:
-        cmd = str(tool_input.get("command", ""))
+        cmd = str(tool_input.get("command", "")) if isinstance(tool_input, dict) else ""
         if FSX_SATISFY_PATTERN.search(cmd):
             sig = f"{tool_name}!fsx"
     elif tool_name == "create_file":
-        path = str(tool_input.get("filePath", ""))
+        path = ""
+        if isinstance(tool_input, dict):
+            path = str(
+                next(
+                    (
+                        tool_input.get(key)
+                        for key in ("path", "file_path", "filePath")
+                        if tool_input.get(key) is not None
+                    ),
+                    "",
+                )
+            )
         if path.endswith(".fsx"):
+            sig = f"{tool_name}!fsx"
+    elif tool_name == "apply_patch":
+        patch = patch_input_text(tool_input)
+        fsx_header = re.compile(
+            r"^\*\*\* (?:Add|Update) File: .+\.fsx\s*$"
+            r"|^\*\*\* Move to: .+\.fsx\s*$",
+            re.IGNORECASE | re.MULTILINE,
+        )
+        if fsx_header.search(patch):
             sig = f"{tool_name}!fsx"
     return sig
 
@@ -100,11 +169,10 @@ def main() -> int:
     except (json.JSONDecodeError, ValueError):
         return 0
 
-    tool_name = str(payload.get("tool_name", ""))
-    tool_input = payload.get("tool_input") or {}
-    if not isinstance(tool_input, dict):
-        tool_input = {}
-    session_id = str(payload.get("session_id", ""))
+    tool_name = str(payload.get("tool_name") or payload.get("toolName") or "")
+    tool_name = TOOL_NAME_ALIASES.get(tool_name, tool_name)
+    tool_input = read_tool_input(payload)
+    session_id = str(payload.get("session_id") or payload.get("sessionId") or "")
     if not tool_name:
         return 0
 
@@ -132,7 +200,7 @@ def main() -> int:
             )
 
     if not triggered_reason and tool_name == TERMINAL_TOOL:
-        cmd = str(tool_input.get("command", ""))
+        cmd = str(tool_input.get("command", "")) if isinstance(tool_input, dict) else ""
         if is_terminal_scriptable(cmd):
             inline_match = re.search(r"\b(python3?|perl|node|ruby)\s+-\S*[ce]\b", cmd)
             if inline_match:
@@ -152,6 +220,7 @@ def main() -> int:
         )
         json.dump(
             {
+                "additionalContext": msg,
                 "hookSpecificOutput": {
                     "hookEventName": "PreToolUse",
                     "additionalContext": msg,
