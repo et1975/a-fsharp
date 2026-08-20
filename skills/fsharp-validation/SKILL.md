@@ -22,7 +22,7 @@ description: >-
 | DU cases | PascalCase | No prefix in public APIs |
 | Interfaces | PascalCase | Must start with `I` per .NET convention, unless existing codebase does not use prefix |
 | Exceptions | PascalCase | Must end with `Exception` |
-| Namespaces | PascalCase | `<Org>.<Technology>[.<Sub>]`, <Org> might be skipped |
+| Namespaces | PascalCase | `<Org>.<Technology>[.<Sub>]`, where <Org> may be omitted |
 | Properties | PascalCase | Booleans: prefix `Is` or `Can` |
 | Methods | PascalCase | |
 | Parameters | camelCase | |
@@ -115,7 +115,7 @@ open MyApp.Infrastructure
 | Nested `Result<Result<...>>` as return type | Typed DU or exceptions |
 | Catch-all `with _ ->` | Catch specific exception types, might be justified in broader context |
 | Module-level side effects | Class with DI |
-| Non-thread-safe static values | Thread-local or injected, fine if immutabe or accessed via `Interlocked` |
+| Non-thread-safe static values | Thread-local or injected, fine if immutable or accessed via `Interlocked` |
 | Name-length alignment | Standard indentation |
 | `[<AutoOpen>]` on domain/public modules | `[<RequireQualifiedAccess>]` (exception: single internal (ie `Prelude`) or narrow-scoped (`Operators`) module) |
 | Public module without `[<RequireQualifiedAccess>]` | Add the attribute (exception: CE builders, extension modules) |
