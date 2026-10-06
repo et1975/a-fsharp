@@ -70,12 +70,20 @@ Start from [template.fsx](template.fsx). Non-obvious bits:
 
 ## Where scripts live
 
-Hybrid library (Voyager-style skill compounding):
+Script locations:
 
-- **Per-task / ephemeral:** `./scripts/<name>.fsx` inside the current workspace. Commit if reused; otherwise delete.
-- **Shared / reusable:** `~/.copilot/scripts/<category>/<name>.fsx`. Promote on second use or when it generalises beyond one workspace.
+- **Per-task / ephemeral:** `~/.copilot/session-state/<session-id>/files/<name>.fsx`. Keep scratch scripts out of the repository.
+- **Shared / reusable:** `~/.copilot/scripts/<category>/<name>.fsx`. Consult existing scripts for reuse.
 
 **Before scripting from scratch, search the shared library:** `ls ~/.copilot/scripts/` and `grep -rl '<keyword>' ~/.copilot/scripts/`. If a previous solution exists, `#load` it or copy + parameterise.
+
+## Note observed usefulness
+
+When a script demonstrably helps with the current task, record a concise usefulness note: the script reference, task/context, observed benefit, supporting evidence, and limitations. If an existing matching note has an upvote mechanism, upvote it with that evidence instead of duplicating it; otherwise add the note through the available feedback channel.
+
+Successful execution or repeated use alone does not establish usefulness. Failed or inconclusive runs should be recorded as such, not as positive feedback. Keep secrets and raw sensitive data out of notes.
+
+This skill supplies observations, not promotion recommendations. Whether a script merits shared-library promotion is an external, evidence-based decision; do not promote it or suggest promotion from this skill.
 
 ## Anti-patterns & rationalizations
 
@@ -87,7 +95,7 @@ Every excuse for violating the F# mandate, with its rebuttal:
 | Hard-coded paths / secrets | Use `fsi.CommandLineArgs`, env vars, or `__SOURCE_DIRECTORY__` |
 | "Only 2 items, below the 3+ trigger, so the language rule doesn't apply" | Trigger gate decides IF to script; language gate decides WHAT LANGUAGE. Independent. The `.fsx` mandate applies whenever you author a script |
 | "Python's `pickle` / Node's `fetch` / bash's `xargs` fits this better" | There's an F# answer (BCL or a NuGet). Subprocess is the escape hatch, not the menu |
-| "F# would spend effort on parser risk I don't have in Python" | The mandate exists precisely so F# skill compounds in `~/.copilot/scripts/`. Today's "risk" is tomorrow's `#load`. A skill gap to close, not a language-fit argument |
+| "F# would spend effort on parser risk I don't have in Python" | Keep orchestration in F# and address the parser risk with validation. A skill gap to close, not a language-fit argument |
 | "I'll be more correct in Python" | Familiarity ≠ correctness. The mandate exists to prevent skill from forking across runtimes |
 | "What would change my mind: a proven F# library / 3+ items / existing fsx" | The rule is unconditional. You're describing what would make compliance *easier*, not what would make the rule *apply* |
 | "Writing `.sh` because it's simpler" | The simplicity is a mirage; types pay back on the second edit |
