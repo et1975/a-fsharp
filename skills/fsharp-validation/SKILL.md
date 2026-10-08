@@ -14,6 +14,37 @@ description: >-
 
 > **Scope**: these rules target production `.fs` code. Test modules, `.fsx` scripts, and framework-conventional patterns may follow their ecosystem idioms.
 
+## Precedence
+
+Rules here come in two tiers:
+
+- **Correctness rules** apply everywhere, whatever existing code does: the async/`Task` rows of *Bad Patterns*, all of *Domain Purity Violations* (including `failwith`/`raise` in domain modules), and the opacity-bypass rows of *Opaque Type Discipline* (`UMX.tag`/`untag`/`%` or raw case constructors outside the home module).
+- **Convention defaults** are everything else: casing in *Naming Guidelines*, wrapper style (UMX vs DU), measure casing, companion function names (`ofString`/`toString` vs `create`/`value`), failure idiom (`option` vs `Result<'T, string>` vs error DU), module/file placement.
+
+When the project already has an established pattern for a convention default in non-test code outside the change under review, that pattern is correct. Report new code that deviates from it under *Consistency*, and do not report the pattern itself. One exception: a representation the user explicitly approved outranks the project pattern. When the change's description or brief attributes that approval to the user, do not report it as a deviation.
+
+## Consistency with Neighbours
+
+Check this first. For each type, module, file, parser, options record, error type and test file that the change adds:
+
+1. Find the nearest existing equivalent, e.g. `grep -rn "\[<Measure>\]\|private .* of\|ofString\|create" --include=*.fs`.
+2. If the change states why this item could not reuse or extend the existing one, check that reason against the code. Report only when the reason does not hold.
+3. Otherwise compare against the precedent and report each row that matches:
+
+| New code | Existing precedent | Finding |
+|---|---|---|
+| Private single-case DU with `create`/`value` | UMX measure + `ofString`/`toString` | Mirror the existing wrapper style and names |
+| `[<Measure>]` whose casing differs from existing measures | Existing measures' casing | Match the existing casing |
+| New error DU or `Result`-returning constructor | Constructors return `option` (or another idiom) | Use the existing failure idiom |
+| New file/module for a noun an existing file owns | That file | Move into the existing file |
+| Second parser, importer or codec for a format | Existing parser | Extend the existing parser |
+| New options/config type alongside an existing one | Existing record | Add a field to the existing record |
+| Extra invocations or passes added to an existing pipeline | Single existing pass | Keep the single flow |
+| New test file for a module with an existing test file | Existing test file | Add cases there |
+| Tests asserting that a removed concept is absent | — | Delete them |
+
+List *Consistency* findings first in the validation output.
+
 ## Naming Guidelines
 
 | Construct | Case | Notes |
@@ -147,12 +178,12 @@ Wrapped primitives (UMX measure types, single-case DUs) are only *opaque* when p
 | Direct pattern-match on a single-case DU (`let (ClientId g) = ...`) outside its home module | Same opacity break — the case is in the public surface | Use `ClientId.value` |
 | Function parameter typed as the underlying primitive (`string`, `Guid`, `int`) where a domain opaque type exists for that concept | Loses the type safety the wrapper exists to provide | Take the opaque type at the parameter |
 | Plain alias (`type CustomerId = string`) used as if it were a domain type | Aliases give zero safety — fully transparent to the compiler | Promote to UMX measure or struct DU with companion module |
-| UMX measure tag named `PascalCase` | Convention is lowercase for the phantom tag, PascalCase for the user-facing alias | Rename measure to `lowerCase`, keep alias `PascalCase` |
+| UMX measure tag named `PascalCase` and the project has no existing `[<Measure>]` types outside this change | Greenfield convention is a lowercase phantom tag with a PascalCase alias | Rename the measure to `lowerCase` and keep the alias `PascalCase` |
 
 The canonical leak signal: `UMX.tag` / `UMX.untag` / `%foo` or a raw single-case DU constructor appearing anywhere other than the type's home module.
 
 ```fsharp
-// ❌ Measure tag PascalCase, no companion module — callers reach for UMX directly
+// ❌ No companion module — callers reach for UMX directly
 [<Measure>] type OrderId
 type OrderId' = string<OrderId>
 let publish (raw: string) = sendOrder (UMX.tag<OrderId> raw)   // leaks raw + tag at the call site
