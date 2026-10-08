@@ -154,23 +154,6 @@ module Order =
 | Async coordination | `MailboxProcessor` | Avoid locks, mutexes, shared mutable state for async state machines |
 | Public API style | Named intermediates, explicit params | Never point-free in public APIs |
 
-### Lambda Syntax Preference
-
-When the project's F# language version supports underscore-dot shorthand, prefer
-`_.Member` or `_.Method(...)` for a lambda whose body is a member-access chain or
-member invocation with arguments independent of the receiver:
-
-```fsharp
-items |> Seq.map _.Name
-values |> Seq.map _.ToString()
-items |> Seq.map _.Name.PadLeft(10)
-```
-
-Use an explicit lambda when the body otherwise references the parameter, needs a
-parameter type annotation, or uses pattern matching. If the project's language
-version does not support the shorthand, use an explicit lambda. Keep public
-function parameters explicit; this preference applies to lambdas within their bodies.
-
 ## Zero-Cost Abstraction Hierarchy — Opaque Types
 
 When wrapping primitives for type safety, the goal is an **opaque type**: callers see a distinct domain type, never the underlying representation, and cannot construct or destructure values without going through a controlled API. A wrapper without a `[<RequireQualifiedAccess>]` companion module hiding construction and read-out is not opaque — it's a leaky alias. Unless an existing pattern dictates otherwise, prefer in order:
@@ -226,6 +209,7 @@ The companion module shape — `create` returning `Result` when validation can f
 
 ## Additional Patterns
 
+- **Shorthand lambdas**: when supported by the project's F# language version, prefer `_.Name` / `_.ToString()` for member-access chains and calls with receiver-independent arguments. Use explicit lambdas for other parameter references, annotations, or pattern matching; keep public function parameters explicit.
 - **Private records + getter modules** for evolving APIs — hide internal structure.
 - **Object expressions** for lightweight ad-hoc interface implementations.
 - **`[<CLIMutable>]`** only for serialization/configuration records, never domain records.
