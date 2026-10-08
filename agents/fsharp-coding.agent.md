@@ -91,16 +91,16 @@ For modifications to existing code, produce a **delta model**: show the current 
 
 Example model artifact:
 ```fsharp
-namespace MyApp.Domain
 // Local precedents:
 //   identifiers -> none found (searched: "\[<Measure>\]", "private .* of")
 //   errors      -> none found (searched: "Result<", "option")
 // New structure: none
+namespace MyApp.Domain
 
 open System
 open System.Threading.Tasks
 
-[<Struct>] type OrderId = OrderId of Guid
+[<Struct>] type OrderId = private OrderId of Guid
 type OrderError = NotFound | AlreadyShipped | InvalidTotal of decimal
 type Order = { Id: OrderId; Items: Item list; Total: decimal }
 

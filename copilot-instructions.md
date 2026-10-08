@@ -6,6 +6,8 @@ When **writing or modifying** F# source (`.fs`, `.fsi`, `.fsx`) or project files
 - **After every F# edit** (yours or the agent's), invoke the `/fsharp-validation` skill, including its *Consistency with Neighbours* check against the changed files, before returning control to the user. Fix every finding it reports and re-run it until clean. Do not hand back with known violations. When the agent's report says `validation self-applied`, run the skill yourself.
 - Invoke the `/fsharp-interop` skill **only** when the user explicitly says the surface targets C#/.NET consumers (`"targets C# consumers"`, `"non-F# .NET consumers"`, `"enable interop checks"`).
 
+Non-F# files (`.ps1`, `.yml`, `.json`, `.md`, etc.) do not require these skills.
+
 ### Delegation brief
 
 A `task` prompt to `fsharp-coding` is built from these parts, in order:
@@ -19,8 +21,6 @@ A `task` prompt to `fsharp-coding` is built from these parts, in order:
 7. The line: `Survey local precedent first and mirror it for representation.`
 
 Representation (wrapper style, failure idiom, new files or modules) is the agent's Phase 1 output. When its report lists `Conflicts`, show them to the user.
-
-Non-F# files (`.ps1`, `.yml`, `.json`, `.md`, etc.) do not require these skills.
 
 # fsx-orchestration — code-as-action reflex
 

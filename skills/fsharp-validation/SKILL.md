@@ -34,6 +34,7 @@ Check this first. For each type, module, file, parser, options record, error typ
 | New code | Existing precedent | Finding |
 |---|---|---|
 | Private single-case DU with `create`/`value` | UMX measure + `ofString`/`toString` | Mirror the existing wrapper style and names |
+| `[<Measure>]` whose casing differs from existing measures | Existing measures' casing | Match the existing casing |
 | New error DU or `Result`-returning constructor | Constructors return `option` (or another idiom) | Use the existing failure idiom |
 | New file/module for a noun an existing file owns | That file | Move into the existing file |
 | Second parser, importer or codec for a format | Existing parser | Extend the existing parser |
@@ -177,7 +178,7 @@ Wrapped primitives (UMX measure types, single-case DUs) are only *opaque* when p
 | Direct pattern-match on a single-case DU (`let (ClientId g) = ...`) outside its home module | Same opacity break — the case is in the public surface | Use `ClientId.value` |
 | Function parameter typed as the underlying primitive (`string`, `Guid`, `int`) where a domain opaque type exists for that concept | Loses the type safety the wrapper exists to provide | Take the opaque type at the parameter |
 | Plain alias (`type CustomerId = string`) used as if it were a domain type | Aliases give zero safety — fully transparent to the compiler | Promote to UMX measure or struct DU with companion module |
-| UMX measure tag named `PascalCase` and the project has no existing `[<Measure>]` types | Greenfield convention is a lowercase phantom tag with a PascalCase alias | Rename the measure to `lowerCase` and keep the alias `PascalCase` |
+| UMX measure tag named `PascalCase` and the project has no existing `[<Measure>]` types outside this change | Greenfield convention is a lowercase phantom tag with a PascalCase alias | Rename the measure to `lowerCase` and keep the alias `PascalCase` |
 
 The canonical leak signal: `UMX.tag` / `UMX.untag` / `%foo` or a raw single-case DU constructor appearing anywhere other than the type's home module.
 
