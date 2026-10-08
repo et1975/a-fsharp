@@ -69,7 +69,7 @@ The modelling exercise applies to **all architectural layers**, not just domain 
 | Mutability | Never | As needed | As needed |
 | Dependencies | None — pure | Injected | Composes Domain + IO |
 
-The table, the examples in this file and the *Zero-Cost Abstraction Hierarchy* are greenfield defaults: use them for concerns where the Step 1 survey found no precedent.
+Every representation choice in this file outside the correctness rules is a greenfield default: the layer table, the examples, Phase 2's error bullets, *Error Management*, *Key Design Decisions*, the *Zero-Cost Abstraction Hierarchy* and *Module Organisation*. Use them only for concerns where the Step 1 survey found no precedent.
 
 Use genuine F# signature-file syntax (`val name : arg:Type -> Result`). This is compiler-checkable: the artifact can be dropped into a `.fsi` and built. No `let f x = ...` placeholders.
 
@@ -129,7 +129,7 @@ Implement the function bodies from the Phase 1 model. Preserve the type signatur
 **Re-modelling loop (mandatory)**: if implementation reveals a modelling problem — a missing case, a wrong return type, a parameter that should be wrapped — stop, update the Phase 1 artifact, re-run self-review, then resume Phase 2. Do not patch the implementation around a broken model.
 
 - **Purity by layer**: domain modules are pure — no IO, no mutable state, never throw. IO modules may throw, use mutable state as needed by external APIs, and define interfaces. Program modules wire the two together.
-- **Domain errors** → `Result<'T, DomainError>`. Defensive catching of specific exceptions is fine (we live on the CLR).
+- **Domain errors** → the failure idiom found in Step 1 (greenfield default: `Result<'T, DomainError>`). Defensive catching of specific exceptions is fine (we live on the CLR).
 - **IO errors** → exceptions are natural. Use `invalidArg`, `nullArg`, `invalidOp`, specific exception types.
 - **Small functions**: target under 20 lines; validation warns at 50. Names follow naturally from domain vocabulary. Larger function body should prompt a review of abstractions and/or composition methods. Exception - the body is handling `match` cases.
 - **NuGet dependencies**: if the implementation introduces a NuGet package (e.g. `FsToolkit.ErrorHandling`, `FSharp.UMX`) that is not already referenced in the project, ask the user for confirmation before adding the `<PackageReference>`. Do not silently introduce new dependencies.
@@ -179,7 +179,7 @@ module Order =
 | Truly exceptional / IO failures | Exceptions (specific types, never `failwith`) |
 | Simple present/absent | `Option<'T>` |
 
-- Domain modules: never throw, return Result. May defensively catch exceptions.
+- Domain modules: never throw; report failure with the project's idiom (greenfield default: `Result`). May defensively catch exceptions.
 - IO boundaries: exceptions are natural. Use `invalidArg`, `nullArg`, `invalidOp`, specific exception types.
 - Compose domain operations: `Result.bind` chains (railway-oriented).
 - Do not nest: `Result<Result<...>>` → use typed DU or exceptions instead.
@@ -233,7 +233,7 @@ The companion module shape — `create` returning `Result` when validation can f
 
 ## Module Organisation
 - **Multiple-modules-per-file** is natural in F# as long as they belong to the same conceptual layer/partition.
-- **Module-per-type**: wrapper/value-object types get a companion `[<RequireQualifiedAccess>]` module with `create`/`value`. Richer domain records get domain-specific behavior instead.
+- **Module-per-type**: wrapper/value-object types get a companion `[<RequireQualifiedAccess>]` module whose construction and read-out functions mirror existing companions (greenfield default: `create`/`value`). Richer domain records get domain-specific behavior instead.
   ```fsharp
   type Email = private Email of string
 

@@ -35,7 +35,15 @@ class AgentGuidanceTests(unittest.TestCase):
         self.assertIn("## Handling corrections", AGENT)
 
     def test_defaults_gated_on_survey(self) -> None:
-        self.assertIn("greenfield defaults: use them for concerns where the Step 1 survey found no precedent", AGENT)
+        self.assertIn("Every representation choice in this file outside the correctness rules is a greenfield default", AGENT)
+        self.assertIn("Use them only for concerns where the Step 1 survey found no precedent.", AGENT)
+
+    def test_later_representation_directives_defer_to_precedent(self) -> None:
+        self.assertIn("**Domain errors** → the failure idiom found in Step 1", AGENT)
+        self.assertIn("report failure with the project's idiom", AGENT)
+        self.assertIn("mirror existing companions (greenfield default: `create`/`value`)", AGENT)
+        self.assertNotIn("**Domain errors** → `Result<'T, DomainError>`.", AGENT)
+        self.assertNotIn("never throw, return Result.", AGENT)
 
     def test_correctness_rules_not_overridable(self) -> None:
         precedence = section(AGENT, "## Precedence", "## The Idiomatic F# Workflow")
