@@ -252,6 +252,7 @@ The companion module shape — `create` returning `Result` when validation can f
 
 ## Additional Patterns
 
+- **Shorthand lambdas**: when supported by the project's F# language version, prefer `_.Name` / `_.ToString()` for member-access chains and calls with receiver-independent arguments. Use explicit lambdas for other parameter references, annotations, or pattern matching; keep public function parameters explicit.
 - **Private records + getter modules** for evolving APIs — hide internal structure.
 - **Object expressions** for lightweight ad-hoc interface implementations.
 - **`[<CLIMutable>]`** only for serialization/configuration records, never domain records.
