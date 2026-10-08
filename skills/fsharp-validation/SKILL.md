@@ -21,14 +21,14 @@ Rules here come in two tiers:
 - **Correctness rules** apply everywhere, whatever existing code does: the async/`Task` rows of *Bad Patterns*, all of *Domain Purity Violations* (including `failwith`/`raise` in domain modules), and the opacity-bypass rows of *Opaque Type Discipline* (`UMX.tag`/`untag`/`%` or raw case constructors outside the home module).
 - **Convention defaults** are everything else: casing in *Naming Guidelines*, wrapper style (UMX vs DU), measure casing, companion function names (`ofString`/`toString` vs `create`/`value`), failure idiom (`option` vs `Result<'T, string>` vs error DU), module/file placement.
 
-When the project already has an established pattern for a convention default in non-test code outside the change under review, that pattern is correct. Report new code that deviates from it under *Consistency*, and do not report the pattern itself. One exception: a representation the user explicitly approved, quoted as `user: "…"` in the brief, report or PR description, outranks the project pattern. Check that the quote exists rather than reporting a deviation.
+When the project already has an established pattern for a convention default in non-test code outside the change under review, that pattern is correct. Report new code that deviates from it under *Consistency*, and do not report the pattern itself. One exception: a representation the user explicitly approved outranks the project pattern. When the change's description or brief attributes that approval to the user, do not report it as a deviation.
 
 ## Consistency with Neighbours
 
 Check this first. For each type, module, file, parser, options record, error type and test file that the change adds:
 
 1. Find the nearest existing equivalent, e.g. `grep -rn "\[<Measure>\]\|private .* of\|ofString\|create" --include=*.fs`.
-2. If the change's `New structure` list (from the agent report or PR description) names this item with a reason why the existing one cannot be extended, check that reason against the code. Report only when the reason does not hold.
+2. If the change states why this item could not reuse or extend the existing one, check that reason against the code. Report only when the reason does not hold.
 3. Otherwise compare against the precedent and report each row that matches:
 
 | New code | Existing precedent | Finding |

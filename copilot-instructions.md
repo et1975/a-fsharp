@@ -3,7 +3,7 @@
 When **writing or modifying** F# source (`.fs`, `.fsi`, `.fsx`) or project files (`.fsproj`):
 
 - **Delegate the edit to the `fsharp-coding` agent.** Do not edit `.fs`/`.fsi`/`.fsx`/`.fsproj` files directly — dispatch the work via the `task` tool with `agent_type=fsharp-coding`. This applies to every F# edit, not just "architectural" ones. The agent owns the file once delegated. Size of the change is not a reason to skip delegation.
-- **After every F# edit** (yours or the agent's), invoke the `/fsharp-validation` skill, including its *Consistency with Neighbours* check against the changed files, before returning control to the user. Fix every finding it reports and re-run it until clean. Do not hand back with known violations. When the agent's report says `validation self-applied`, run the skill yourself.
+- **After every F# edit** (yours or the agent's), invoke the `/fsharp-validation` skill, including its *Consistency with Neighbours* check against the changed files, before returning control to the user. Fix every finding it reports and re-run it until clean. Do not hand back with known violations.
 - Invoke the `/fsharp-interop` skill **only** when the user explicitly says the surface targets C#/.NET consumers (`"targets C# consumers"`, `"non-F# .NET consumers"`, `"enable interop checks"`).
 
 Non-F# files (`.ps1`, `.yml`, `.json`, `.md`, etc.) do not require these skills.
@@ -12,11 +12,11 @@ Non-F# files (`.ps1`, `.yml`, `.json`, `.md`, etc.) do not require these skills.
 
 A `task` prompt to `fsharp-coding` is built from these parts, in order:
 
-1. **Goal** — the F# part of the user's request, quoted (`user: "<quote>"`). Non-F# steps such as opening a PR stay with the parent.
-2. **Decisions** — decisions the user approved, each quoted with its source (`user: "<quote>"`).
+1. **Goal** — the F# part of the user's request, in the user's words and attributed to them. Non-F# steps such as opening a PR stay with the parent.
+2. **Decisions** — decisions the user approved, each in the user's words and attributed to them.
 3. **Scope** — working directory, the files or projects the agent may change, and the repository's build/test command (a repository fact, not a requirement).
-4. **Context** — paths to the relevant code and docs. Mark agent-drafted designs, specs and saved decision records `draft — not user-approved`.
-5. **Acceptance** — one line per observable behaviour, each traced to the user: `user: "<quote>" → <observable check>`.
+4. **Context** — paths to the relevant code and docs. Say which of them are agent-drafted designs, specs or saved decision records that the user has not approved.
+5. **Acceptance** — one line per observable behaviour, each traced to what the user said.
 6. **Execution boundary** — what the agent returns, e.g. "edit and build only; report back, no commits".
 7. The line: `Survey local precedent first and mirror it for representation.`
 
