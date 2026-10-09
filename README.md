@@ -6,7 +6,7 @@ Distilled from official F# guidelines, customized with my personal preferences.
 ## What's Included
 
 - **[copilot-instructions.md](copilot-instructions.md)** — Repository-level instructions that route Copilot to the correct agent/skill based on file type, and the *fsx-orchestration* reflex that mandates F# `.fsx` for all orchestration scripts.
-- **[agents/fsharp-coding.agent.md](agents/fsharp-coding.agent.md)** — A coding agent with an opinionated F# workflow: local-precedent survey, then types-first modelling, purity discipline, single-page domain modelling, railway-oriented error handling, and module organisation conventions.
+- **[agents/fsharp-coding.agent.md](agents/fsharp-coding.agent.md)** — A coding agent with an opinionated F# workflow: local-precedent survey, then types-first modelling scaled to the change, purity discipline, single-page domain modelling, railway-oriented error handling, and module organisation conventions. Routine implementation-only edits reuse existing signatures; design changes produce a model artifact.
 - **[skills/fsharp-validation/](skills/fsharp-validation/)** — Validation skill for reviewing F# code against naming, formatting, and anti-pattern rules. Checks consistency with neighbouring code first; project conventions override its defaults.
 - **[skills/fsharp-interop/](skills/fsharp-interop/)** — Opt-in skill for designing .NET-consumer-friendly API façades on top of idiomatic F# internals.
 - **[skills/fsx-orchestration/](skills/fsx-orchestration/)** — *Code-as-action* skill: when a plan involves fan-out, multi-tool composition, polling, filtering, or replay, emit a single executable `.fsx` instead of chaining tool calls. Ships with `template.fsx`, three worked `examples/`, and `research.md`.

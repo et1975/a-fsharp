@@ -1,10 +1,8 @@
 ---
 name: fsharp-validation
 description: >-
-  Use immediately after any tool that edits or creates `.fs`, `.fsi`, `.fsx`,
-  or `.fsproj` files — and any time the user says 'check', 'lint',
-  'validate', or 'review' on F# code, or for PR / code review of F#. Run
-  until it reports no findings before handing control back.
+  Use when `.fs`, `.fsi`, `.fsx`, or `.fsproj` files have just been edited
+  or created, or for F# checks, linting, validation, and code/PR reviews.
 ---
 
 # F# Validation Skill
@@ -44,6 +42,10 @@ Check this first. For each type, module, file, parser, options record, error typ
 | Tests asserting that a removed concept is absent | — | Delete them |
 
 List *Consistency* findings first in the validation output.
+
+## Validation Workflow
+
+Apply the rules to the code under review. Fix every finding and re-run validation until it reports no findings before handing control back.
 
 ## Naming Guidelines
 
