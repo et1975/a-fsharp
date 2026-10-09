@@ -1,6 +1,11 @@
 ---
 name: fsx-orchestration
-description: "STOP and emit one F# .fsx instead of chaining tool calls or authoring a script in any other language. Fires when walking a tree with repeated read_file/grep/file_search, same op across 3+ items, multi-tool composition with bulky intermediates, filtering >100 rows to pick a few, polling a condition, replaying anything in ~/.copilot/scripts/, sensitive data, OR about to type `cat > foo.py <<`, `tee foo.sh`, `python3 -c`, `perl -e`, `node -e`. The language gate (F#) is independent of trigger conditions. SKIP for 1-2 tool calls, per-step user judgement, single tool call. Always check `ls ~/.copilot/scripts/` first."
+description: >-
+  Use when authoring any orchestration script or inline-interpreter automation,
+  or for repeated tree reads/searches, 3+ item fan-out, bulky tool composition,
+  filtering >100 rows to a few, polling, replay, or sensitive-data handling.
+  For non-script work, exclude single-call/1-2-step tasks, per-step human
+  decisions, and exploratory replanning.
 ---
 
 # fsx-orchestration
@@ -54,7 +59,7 @@ Shebang the script with `#!/usr/bin/env -S dotnet fsi` (the `-S` is required to 
 
 ## Script anatomy
 
-Start from [template.fsx](template.fsx). Non-obvious bits:
+When writing a script, start from [template.fsx](template.fsx) and consult the relevant [pattern](#patterns). Non-obvious bits:
 
 - **Args:** `fsi.CommandLineArgs |> Array.skip 1` — first element is the script path, not arg 0.
 - **Exceptions propagate.** FSI already prints type + message + stack + line and exits non-zero. Wrapping the top level in `try ... with` just to log `ex.Message` deletes the stack and is strictly worse than nothing. Catch only for cleanup, reformatting, or a specific non-1 exit code.
